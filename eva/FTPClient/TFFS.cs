@@ -1,4 +1,5 @@
-﻿using System;
+﻿// SPDX-License-Identifier: GPL-2.0-or-later
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -283,6 +284,9 @@ namespace YourFritz.TFFS
         MTD14 = 454,
         MTD15 = 455,
         WLAN_SSID = 456,
+        GPON_Serial = 457,
+        MAC_WLAN3 = 458,
+        HardwareFeatures = 459,
         UrladerVersion = 509,
         NameTableVersion = 510,
         NameTableID = 511,
@@ -394,6 +398,7 @@ namespace YourFritz.TFFS
 
             entries.Add(TFFSEnvironmentID.AutoMDIX, new TFFSEnvironmentEntry(TFFSEnvironmentID.AutoMDIX, "AutoMDIX"));
             entries.Add(TFFSEnvironmentID.DMC, new TFFSEnvironmentEntry(TFFSEnvironmentID.DMC, "DMC"));
+            entries.Add(TFFSEnvironmentID.HardwareFeatures, new TFFSEnvironmentEntry(TFFSEnvironmentID.HardwareFeatures, "HardwareFeatures"));
             entries.Add(TFFSEnvironmentID.HWRevision, new TFFSEnvironmentEntry(TFFSEnvironmentID.HWRevision, "HWRevision"));
             entries.Add(TFFSEnvironmentID.HWSubRevision, new TFFSEnvironmentEntry(TFFSEnvironmentID.HWSubRevision, "HWSubRevision"));
             entries.Add(TFFSEnvironmentID.ProductID, new TFFSEnvironmentEntry(TFFSEnvironmentID.ProductID, "ProductID"));
@@ -421,6 +426,7 @@ namespace YourFritz.TFFS
             entries.Add(TFFSEnvironmentID.FirmwareInfo, new TFFSEnvironmentEntry(TFFSEnvironmentID.FirmwareInfo, "firmware_info"));
             entries.Add(TFFSEnvironmentID.FirmwareVersion, new TFFSEnvironmentEntry(TFFSEnvironmentID.FirmwareVersion, "firmware_version"));
             entries.Add(TFFSEnvironmentID.FlashSize, new TFFSEnvironmentEntry(TFFSEnvironmentID.FlashSize, "flashsize"));
+            entries.Add(TFFSEnvironmentID.GPON_Serial, new TFFSEnvironmentEntry(TFFSEnvironmentID.GPON_Serial, "gpon_serial"));
             entries.Add(TFFSEnvironmentID.JFFS2Size, new TFFSEnvironmentEntry(TFFSEnvironmentID.JFFS2Size, "jffs2_size"));
             entries.Add(TFFSEnvironmentID.KernelArgs, new TFFSEnvironmentEntry(TFFSEnvironmentID.KernelArgs, "kernel_args"));
             entries.Add(TFFSEnvironmentID.KernelArgs1, new TFFSEnvironmentEntry(TFFSEnvironmentID.KernelArgs1, "kernel_args1"));
@@ -430,6 +436,7 @@ namespace YourFritz.TFFS
             entries.Add(TFFSEnvironmentID.MAC_B, new TFFSEnvironmentEntry(TFFSEnvironmentID.MAC_B, "macb"));
             entries.Add(TFFSEnvironmentID.MAC_WLAN, new TFFSEnvironmentEntry(TFFSEnvironmentID.MAC_WLAN, "macwlan"));
             entries.Add(TFFSEnvironmentID.MAC_WLAN2, new TFFSEnvironmentEntry(TFFSEnvironmentID.MAC_WLAN2, "macwlan2"));
+            entries.Add(TFFSEnvironmentID.MAC_WLAN3, new TFFSEnvironmentEntry(TFFSEnvironmentID.MAC_WLAN3, "macwlan3"));
             entries.Add(TFFSEnvironmentID.MAC_DSL, new TFFSEnvironmentEntry(TFFSEnvironmentID.MAC_DSL, "macdsl"));
             entries.Add(TFFSEnvironmentID.MemorySize, new TFFSEnvironmentEntry(TFFSEnvironmentID.MemorySize, "memsize"));
             entries.Add(TFFSEnvironmentID.ModeTTY0, new TFFSEnvironmentEntry(TFFSEnvironmentID.ModeTTY0, "modetty0"));
@@ -559,20 +566,31 @@ namespace YourFritz.TFFS
             //    <nfs> and <nfsroot> values and with correctly sorted names (alphabetically) 
             // @K later has added 6490 support - more MTD definitions, crash and panic log for the 2nd system, DVB configuration, TFFS3 
             //    support - which of these changes were contained in @J already, is currently unknown.
-            // @L (the current version) has added the individual WLAN SSID with two additional characters. Various "Mesh"-related 
-            //    changes have taken place in "tffs.h", but the name table was not changed anymore.
+            // @L has added the individual WLAN SSID with two additional characters. Various "Mesh"-related changes have taken place in
+            //    "tffs.h", but the name table was not changed anymore.
+            // @M new entries were added (macwlan3 and HardwareFeatures for FRITZ!WLAN Repeater 3000, gpon_serial for Fiber models)
+            // @N seems to be the same as @M, only HardwareFeatures was removed
             if (Version.CompareTo("@G") != 0 &&
                 Version.CompareTo("@H") != 0 &&
                 Version.CompareTo("@I") != 0 &&
                 Version.CompareTo("@J") != 0 &&
                 Version.CompareTo("@K") != 0 &&
-                Version.CompareTo("@L") != 0)
+                Version.CompareTo("@L") != 0 &&
+                Version.CompareTo("@M") != 0 &&
+                Version.CompareTo("@N") != 0)
             {
-                throw new TFFSException("Only name table versions from @G (used in 2010) to @L (current) are supported yet.");
+                throw new TFFSException("Only name table versions from @G (used in 2010) to @N (latest) are supported yet.");
             }
 
             entries.Add(TFFSEnvironmentID.AutoMDIX);
             entries.Add(TFFSEnvironmentID.DMC);
+
+            if (Version.CompareTo("@M") == 0)
+            {
+                // HardwareFeatures was added in @M and seems to be removed in @N
+                entries.Add(TFFSEnvironmentID.HardwareFeatures);
+            }
+
             entries.Add(TFFSEnvironmentID.HWRevision);
             entries.Add(TFFSEnvironmentID.HWSubRevision);
             entries.Add(TFFSEnvironmentID.ProductID);
@@ -612,6 +630,13 @@ namespace YourFritz.TFFS
             }
 
             entries.Add(TFFSEnvironmentID.FlashSize);
+
+            if (Version.CompareTo("@L") == 1)
+            {
+                // gpon_serial was added in @M
+                entries.Add(TFFSEnvironmentID.GPON_Serial);
+            }
+
             entries.Add(TFFSEnvironmentID.JFFS2Size);
             entries.Add(TFFSEnvironmentID.KernelArgs);
             entries.Add(TFFSEnvironmentID.KernelArgs1);
@@ -627,6 +652,13 @@ namespace YourFritz.TFFS
             entries.Add(TFFSEnvironmentID.MAC_B);
             entries.Add(TFFSEnvironmentID.MAC_WLAN);
             entries.Add(TFFSEnvironmentID.MAC_WLAN2);
+
+            if (Version.CompareTo("@L") == 1)
+            {
+                // macwlan3 was added in @M
+                entries.Add(TFFSEnvironmentID.MAC_WLAN3);
+            }
+
             entries.Add(TFFSEnvironmentID.MAC_DSL);
             entries.Add(TFFSEnvironmentID.MemorySize);
             entries.Add(TFFSEnvironmentID.ModeTTY0);
@@ -729,7 +761,7 @@ namespace YourFritz.TFFS
         // get the latest implemented name table
         public static TFFSNameTable GetLatest()
         {
-            return TFFSNameTable.GetNameTable("@L");
+            return TFFSNameTable.GetNameTable("@N");
         }
     }
 }
